@@ -861,7 +861,7 @@ public abstract class BleManager<E extends BleManagerCallbacks> extends TimeoutH
 	}
 
 	@MainThread
-	private boolean internalDisconnect() {
+	private boolean internalDisconnect(boolean close) {
 		mUserDisconnected = true;
 		mInitialConnection = false;
 		mReady = false;
@@ -873,6 +873,14 @@ public abstract class BleManager<E extends BleManagerCallbacks> extends TimeoutH
 			final boolean wasConnected = mConnected;
 			log(Log.DEBUG, "gatt.disconnect()");
 			mBluetoothGatt.disconnect();
+			if (close) {
+				log(Log.DEBUG, "gatt.close()");
+				try {
+					mBluetoothGatt.close();
+				} catch (final Throwable t) {
+					// ignore
+				}
+			}
 
 			if (wasConnected)
 				return true;
@@ -2085,7 +2093,7 @@ public abstract class BleManager<E extends BleManagerCallbacks> extends TimeoutH
 		mValueChangedRequest = null;
 		if (request.type == Request.Type.CONNECT) {
 			mConnectRequest = null;
-			internalDisconnect();
+			internalDisconnect(true);
 			// The method above will call mGattCallback.nextRequest(true) so we have to return here.
 			return;
 		}
@@ -2614,7 +2622,7 @@ public abstract class BleManager<E extends BleManagerCallbacks> extends TimeoutH
 				} else {
 					log(Log.WARN, "Device is not supported");
 					mCallbacks.onDeviceNotSupported(gatt.getDevice());
-					internalDisconnect();
+					internalDisconnect(false);
 				}
 			} else {
 				Log.e(TAG, "onServicesDiscovered error " + status);
@@ -2623,7 +2631,7 @@ public abstract class BleManager<E extends BleManagerCallbacks> extends TimeoutH
 					mConnectRequest.notifyFail(gatt.getDevice(), FailCallback.REASON_REQUEST_FAILED);
 					mConnectRequest = null;
 				}
-				internalDisconnect();
+				internalDisconnect(false);
 			}
 		}
 
@@ -3235,7 +3243,7 @@ public abstract class BleManager<E extends BleManagerCallbacks> extends TimeoutH
 					break;
 				}
 				case DISCONNECT: {
-					result = internalDisconnect();
+					result = internalDisconnect(false);
 					break;
 				}
 				case CREATE_BOND: {
