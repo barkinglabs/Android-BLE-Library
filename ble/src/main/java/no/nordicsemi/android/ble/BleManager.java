@@ -873,14 +873,6 @@ public abstract class BleManager<E extends BleManagerCallbacks> extends TimeoutH
 			final boolean wasConnected = mConnected;
 			log(Log.DEBUG, "gatt.disconnect()");
 			mBluetoothGatt.disconnect();
-			if (close) {
-				log(Log.DEBUG, "gatt.close()");
-				try {
-					mBluetoothGatt.close();
-				} catch (final Throwable t) {
-					// ignore
-				}
-			}
 
 			if (wasConnected)
 				return true;
@@ -889,6 +881,14 @@ public abstract class BleManager<E extends BleManagerCallbacks> extends TimeoutH
 			// gatt.disconnect(), the connection attempt will be stopped.
 			mConnectionState = BluetoothGatt.STATE_DISCONNECTED;
 			log(Log.INFO, "Disconnected");
+			if (close) {
+				log(Log.DEBUG, "gatt.close()");
+				try {
+					mBluetoothGatt.close();
+				} catch (final Throwable t) {
+					// ignore
+				}
+			}
 			mCallbacks.onDeviceDisconnected(mBluetoothGatt.getDevice());
 		}
 		// mRequest may be of type DISCONNECT or CONNECT (timeout).
